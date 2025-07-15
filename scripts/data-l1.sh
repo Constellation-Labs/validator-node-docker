@@ -1,0 +1,35 @@
+#!/bin/bash
+
+source /app/scripts/shared.sh
+
+start_data_l1_service() {
+  export CL_KEYSTORE=$DATA_L1_CL_KEYSTORE
+  export CL_KEYALIAS=$DATA_L1_CL_KEYALIAS
+  export CL_PASSWORD=$DATA_L1_CL_PASSWORD
+
+  export CL_PUBLIC_HTTP_PORT=$DATA_L1_PUBLIC_PORT
+  export CL_P2P_HTTP_PORT=$DATA_L1_P2P_PORT
+  export CL_CLI_HTTP_PORT=$DATA_L1_CLI_PORT
+
+  export CL_GLOBAL_L0_PEER_HTTP_HOST=$GL0_NODE_IP
+  export CL_GLOBAL_L0_PEER_HTTP_PORT=$GL0_NODE_PORT
+  export CL_GLOBAL_L0_PEER_ID=$GL0_NODE_ID
+
+  export CL_L0_PEER_HTTP_HOST=$SOURCE_NODE_1_IP
+  export CL_L0_PEER_HTTP_PORT=$SOURCE_NODE_1_ML0_PUBLIC_PORT
+  export CL_L0_PEER_ID=$SOURCE_NODE_1_PEER_ID
+
+  export CL_L0_TOKEN_IDENTIFIER=$METAGRAPH_ID
+  export CL_APP_ENV=$ENVIRONMENT
+
+  check_and_download_seedlist "data-l1" "$DATA_L1_SEEDLIST_URL" "$DATA_L1_SEEDLIST_NAME"
+
+  echo "Starting data-l1 on port $DATA_L1_PUBLIC_PORT..."
+  cd /app/data-l1
+
+  java -jar data-l1.jar run-validator --ip $NODE_IP $SEEDLIST_ARG > /app/data-l1/app.log 2>&1 &
+  echo $! > /app/data-l1/app.pid
+
+  check_if_node_is_ready_to_join "data-l1" $DATA_L1_PUBLIC_PORT
+  join_node_to_cluster "data-l1" $DATA_L1_CLI_PORT $SOURCE_NODE_1_PEER_ID $SOURCE_NODE_1_IP $SOURCE_NODE_1_CL1_P2P_PORT
+}

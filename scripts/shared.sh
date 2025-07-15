@@ -1,0 +1,69 @@
+#!/bin/bash
+
+check_if_node_is_ready_to_join() {
+  local service_name=$1
+  local port=$2
+
+  echo "Waiting for $service_name to become ReadyToJoin..."
+
+  for i in {1..60}; do
+    response=$(curl -s -o /tmp/health.json -w "%{http_code}" "http://localhost:$port/node/info")
+
+    if [ "$response" = "200" ]; then
+      state=$(jq -r '.state' /tmp/health.json 2>/dev/null)
+      if [ -n "$state" ]; then
+        echo "[$service_name] Attempt $i: Current state is \"$state\""
+        if [ "$state" = "ReadyToJoin" ]; then
+          echo "$service_name is ReadyToJoin"
+          return 0
+        fi
+      else
+        echo "[$service_name] Attempt $i: State not found in response"
+      fi
+    else
+      echo "[$service_name] Attempt $i: Health check returned HTTP $response"
+    fi
+
+    sleep 1
+  done
+
+  echo "$service_name is not ReadyToJoin after 60 seconds"
+  return 1
+}
+
+join_node_to_cluster() {
+  local service_name=$1
+  local cli_port=$2
+  local node_id=$3
+  local node_ip=$4
+  local node_p2p_port=$5
+
+  echo "Joining $service_name to cluster on $node_ip:$node_p2p_port..."
+  curl -s -X POST http://localhost:$cli_port/cluster/join \
+    -H "Content-type: application/json" \
+    -d "{\"id\":\"$node_id\", \"ip\": \"$node_ip\", \"p2pPort\": $node_p2p_port}"
+}
+
+check_and_download_seedlist() {
+  local service_name=$1
+  local seedlist_url=$2
+  local seedlist_name=$3
+
+  local seedlist_path="/app/$service_name/$seedlist_name"
+
+  if [ -n "$seedlist_url" ] && [ -n "$seedlist_name" ]; then
+    echo "Downloading seedlist from $seedlist_url to $seedlist_path"
+    wget -q "$seedlist_url" -O "$seedlist_path"
+
+    if [ $? -ne 0 ]; then
+      echo "Failed to download seedlist from $seedlist_url"
+      exit 1
+    fi
+
+    echo "Seedlist downloaded successfully."
+
+    if [ -f "$seedlist_path" ]; then
+      export SEEDLIST_ARG="--seedlist $seedlist_path"
+    fi
+  fi
+}
