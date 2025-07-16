@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   pacaswap-node:
-    image: girolneto/pacaswap-test:latest
+    image: constellationnetwork/pacaswap-node-operator
     container_name: pacaswap-node
     restart: unless-stopped
     
