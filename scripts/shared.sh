@@ -67,3 +67,27 @@ check_and_download_seedlist() {
     fi
   fi
 }
+
+check_and_download_allowance_list() {
+  local service_name=$1
+  local allowance_list_url=$2
+  local allowance_list_name=$3
+
+  local allowance_list_path="/app/$service_name/$allowance_list_name"
+
+  if [ -n "$allowance_list_url" ] && [ -n "$allowance_list_name" ]; then
+    echo "Downloading allowance list from $allowance_list_url to $allowance_list_path"
+    wget -q "$allowance_list_url" -O "$allowance_list_path"
+
+    if [ $? -ne 0 ]; then
+      echo "Failed to download allowance list from $allowance_list_url"
+      exit 1
+    fi
+
+    echo "Allowance list downloaded successfully."
+
+    if [ -f "$allowance_list_path" ]; then
+      export ALLOWANCE_LIST_ARG="--allowanceList $allowance_list_path"
+    fi
+  fi
+}

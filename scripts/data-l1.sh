@@ -23,11 +23,12 @@ start_data_l1_service() {
   export CL_APP_ENV=$ENVIRONMENT
 
   check_and_download_seedlist "data-l1" "$DATA_L1_SEEDLIST_URL" "$DATA_L1_SEEDLIST_NAME"
+  check_and_download_allowance_list "data-l1" "$DATA_L1_ALLOWANCE_LIST_URL" "$DATA_L1_ALLOWANCE_LIST_NAME"
 
   echo "Starting data-l1 on port $DATA_L1_PUBLIC_PORT..."
   cd /app/data-l1
 
-  java -jar data-l1.jar run-validator --ip $NODE_IP $SEEDLIST_ARG > /app/data-l1/app.log 2>&1 &
+  java -jar data-l1.jar run-validator --ip $NODE_IP $SEEDLIST_ARG $ALLOWANCE_LIST_ARG > /app/data-l1/app.log 2>&1 &
   echo $! > /app/data-l1/app.pid
 
   check_if_node_is_ready_to_join "data-l1" $DATA_L1_PUBLIC_PORT

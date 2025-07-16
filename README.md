@@ -40,6 +40,10 @@ DATA_L1_PUBLIC_PORT=9300
 METAGRAPH_L0_SEEDLIST_URL=https://example.com/seedlist.txt
 METAGRAPH_L0_SEEDLIST_NAME=seedlist.txt
 
+# Optional allowance list
+METAGRAPH_L0_ALLOWANCE_LIST_URL=https://example.com/allowance_list.txt
+METAGRAPH_L0_ALLOWANCE_LIST_NAME=allowance_list.txt
+
 # Peer IDs, keystore config, etc.
 ```
 ### 2. Build and Start

@@ -23,11 +23,12 @@ start_currency_l1_service() {
   export CL_APP_ENV=$ENVIRONMENT
 
   check_and_download_seedlist "currency-l1" "$CURRENCY_L1_SEEDLIST_URL" "$CURRENCY_L1_SEEDLIST_NAME"
+  check_and_download_allowance_list "currency-l1" "$CURRENCY_L1_ALLOWANCE_LIST_URL" "$CURRENCY_L1_ALLOWANCE_LIST_NAME"
 
   echo "Starting currency-l1 on port $CURRENCY_L1_PUBLIC_PORT..."
   cd /app/currency-l1
 
-  java -jar currency-l1.jar run-validator --ip $NODE_IP $SEEDLIST_ARG > /app/currency-l1/app.log 2>&1 &
+  java -jar currency-l1.jar run-validator --ip $NODE_IP $SEEDLIST_ARG $ALLOWANCE_LIST_ARG > /app/currency-l1/app.log 2>&1 &
   echo $! > /app/currency-l1/app.pid
 
   check_if_node_is_ready_to_join "currency-l1" $CURRENCY_L1_PUBLIC_PORT

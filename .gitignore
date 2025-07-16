@@ -1,3 +1,4 @@
 .env
 jars/*.jar
 shared-data
+.DS_Store

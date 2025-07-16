@@ -23,12 +23,13 @@ start_metagraph_l0_service() {
   export CL_INCREMENTAL_SNAPSHOT_STORED_PATH=/app/shared-data/metagraph-l0/data/incremental_snapshot
   export CL_SNAPSHOT_INFO_PATH=/app/shared-data/metagraph-l0/data/snapshot_info
 
-  check_and_download_seedlist "metagraph-l0" "$METAGRAPH_L0_SEEDLIST_URL" "$METAGRAPH_L0_SEEDLIST_NAME"
+  check_and_download_seedlist "metagraph-l0" "$METAGRAPH_L0_SEEDLIST_URL" "$METAGRAPH_L0_ALLOWANCE_LIST_NAME"
+  check_and_download_allowance_list "metagraph-l0" "$METAGRAPH_L0_ALLOWANCE_LIST_URL" "$METAGRAPH_L0_ALLOWANCE_LIST_NAME"
 
   echo "Starting metagraph-l0 on port $METAGRAPH_L0_PUBLIC_PORT..."
   cd /app/metagraph-l0
 
-  java -jar metagraph-l0.jar run-validator --ip $NODE_IP $SEEDLIST_ARG > /app/metagraph-l0/app.log 2>&1 &
+  java -jar metagraph-l0.jar run-validator --ip $NODE_IP $SEEDLIST_ARG $ALLOWANCE_LIST_ARG > /app/metagraph-l0/app.log 2>&1 &
   echo $! > /app/metagraph-l0/app.pid
 
   check_if_node_is_ready_to_join "metagraph-l0" $METAGRAPH_L0_PUBLIC_PORT
