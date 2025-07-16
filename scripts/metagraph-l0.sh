@@ -24,7 +24,7 @@ start_metagraph_l0_service() {
   export CL_SNAPSHOT_INFO_PATH=/app/shared-data/metagraph-l0/data/snapshot_info
   export CL_CALCULATED_STATE_PATH=/app/shared-data/metagraph-l0/data/calculated_state
 
-  check_and_download_seedlist "metagraph-l0" "$METAGRAPH_L0_SEEDLIST_URL" "$METAGRAPH_L0_ALLOWANCE_LIST_NAME"
+  check_and_download_seedlist "metagraph-l0" "$METAGRAPH_L0_SEEDLIST_URL" "$METAGRAPH_L0_SEEDLIST_NAME"
   check_and_download_allowance_list "metagraph-l0" "$METAGRAPH_L0_ALLOWANCE_LIST_URL" "$METAGRAPH_L0_ALLOWANCE_LIST_NAME"
 
   echo "Starting metagraph-l0 on port $METAGRAPH_L0_PUBLIC_PORT..."
