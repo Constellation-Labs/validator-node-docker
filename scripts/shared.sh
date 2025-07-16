@@ -1,5 +1,21 @@
 #!/bin/bash
 
+get_random_source_node() {
+  local layer=$1  # Expecting: ML0, CL1, DL1
+
+  local index=$((RANDOM % 3))
+
+  local peer_id_var="SOURCE_NODE_$((index + 1))_PEER_ID"
+  local ip_var="SOURCE_NODE_$((index + 1))_IP"
+  local port_var="SOURCE_NODE_$((index + 1))_${layer}_P2P_PORT"
+
+  local peer_id="${!peer_id_var}"
+  local ip="${!ip_var}"
+  local p2p_port="${!port_var}"
+
+  echo "$peer_id;$ip;$p2p_port"
+}
+
 check_if_node_is_ready_to_join() {
   local service_name=$1
   local port=$2

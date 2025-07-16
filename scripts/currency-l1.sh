@@ -31,6 +31,13 @@ start_currency_l1_service() {
   java -jar currency-l1.jar run-validator --ip $NODE_IP $SEEDLIST_ARG $ALLOWANCE_LIST_ARG > /app/currency-l1/app.log 2>&1 &
   echo $! > /app/currency-l1/app.pid
 
+  source_info=$(get_random_source_node "CL1")
+  peer_id=$(echo "$source_info" | cut -d';' -f1)
+  ip=$(echo "$source_info" | cut -d';' -f2)
+  p2p_port=$(echo "$source_info" | cut -d';' -f3)
+
   check_if_node_is_ready_to_join "currency-l1" $CURRENCY_L1_PUBLIC_PORT
-  join_node_to_cluster "currency-l1" $CURRENCY_L1_CLI_PORT $SOURCE_NODE_1_PEER_ID $SOURCE_NODE_1_IP $SOURCE_NODE_1_CL1_P2P_PORT
+
+  echo "Joining using random CL1 source node: $ip:$p2p_port ($peer_id)"
+  join_node_to_cluster "currency-l1" "$CURRENCY_L1_CLI_PORT" "$peer_id" "$ip" "$p2p_port"
 }

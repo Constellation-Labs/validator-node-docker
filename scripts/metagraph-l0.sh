@@ -33,6 +33,13 @@ start_metagraph_l0_service() {
   java -jar metagraph-l0.jar run-validator --ip $NODE_IP $SEEDLIST_ARG $ALLOWANCE_LIST_ARG > /app/metagraph-l0/app.log 2>&1 &
   echo $! > /app/metagraph-l0/app.pid
 
+  source_info=$(get_random_source_node "ML0")
+  peer_id=$(echo "$source_info" | cut -d';' -f1)
+  ip=$(echo "$source_info" | cut -d';' -f2)
+  p2p_port=$(echo "$source_info" | cut -d';' -f3)
+
   check_if_node_is_ready_to_join "metagraph-l0" $METAGRAPH_L0_PUBLIC_PORT
-  join_node_to_cluster "metagraph-l0" $METAGRAPH_L0_CLI_PORT $SOURCE_NODE_1_PEER_ID $SOURCE_NODE_1_IP $SOURCE_NODE_1_ML0_P2P_PORT
+  
+  echo "Joining using random ML0 source node: $ip:$p2p_port ($peer_id)"
+  join_node_to_cluster "metagraph-l0" "$METAGRAPH_L0_CLI_PORT" "$peer_id" "$ip" "$p2p_port"
 }

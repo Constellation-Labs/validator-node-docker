@@ -8,33 +8,40 @@ source /app/scripts/data-l1.sh
 # Ensure shared data directory exists
 mkdir -p "/app/shared-data"
 
-# Start services
-start_metagraph_l0_service
-start_currency_l1_service
-start_data_l1_service
+# Normalize and prepare LAYERS_TO_RUN
+LAYERS_TO_RUN_CSV=$(echo "$LAYERS_TO_RUN" | tr '[:upper:]' '[:lower:]')
+
+# Conditionally start services
+[[ "$LAYERS_TO_RUN_CSV" == *"ml0"* ]] && start_metagraph_l0_service
+[[ "$LAYERS_TO_RUN_CSV" == *"cl1"* ]] && start_currency_l1_service
+[[ "$LAYERS_TO_RUN_CSV" == *"dl1"* ]] && start_data_l1_service
 
 echo "Waiting for services to start..."
 sleep 10
 
 while true; do
   for service in metagraph-l0 currency-l1 data-l1; do
+    case $service in
+      "metagraph-l0") [[ "$LAYERS_TO_RUN_CSV" != *"ml0"* ]] && continue ;;
+      "currency-l1")  [[ "$LAYERS_TO_RUN_CSV" != *"cl1"* ]] && continue ;;
+      "data-l1")      [[ "$LAYERS_TO_RUN_CSV" != *"dl1"* ]] && continue ;;
+    esac
+
     pid_file="/app/$service/app.pid"
 
     if [ -f "$pid_file" ]; then
       pid=$(cat "$pid_file")
 
-      # Check if process is alive
       if ! kill -0 "$pid" 2>/dev/null; then
         echo "Process for $service (PID $pid) died, restarting..."
         case $service in
           "metagraph-l0") start_metagraph_l0_service ;;
-          "currency-l1") start_currency_l1_service ;;
-          "data-l1")     start_data_l1_service ;;
+          "currency-l1")  start_currency_l1_service ;;
+          "data-l1")      start_data_l1_service ;;
         esac
         continue
       fi
 
-      # Health check by mapping each service to its port
       case $service in
         "metagraph-l0") port=$METAGRAPH_L0_PUBLIC_PORT ;;
         "currency-l1")  port=$CURRENCY_L1_PUBLIC_PORT ;;
