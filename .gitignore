@@ -1,4 +1,4 @@
 .env
 jars/*.jar
-shared-data
+shared-data/**/*.p12
 .DS_Store
