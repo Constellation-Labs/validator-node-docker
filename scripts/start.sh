@@ -11,6 +11,27 @@ mkdir -p "/app/shared-data"
 # Normalize and prepare LAYERS_TO_RUN
 LAYERS_TO_RUN_CSV=$(echo "$LAYERS_TO_RUN" | tr '[:upper:]' '[:lower:]')
 
+# Function to restart a service
+restart_service() {
+  local service=$1
+  local pid_file="/app/$service/app.pid"
+  
+  # Kill existing process if it exists
+  if [ -f "$pid_file" ]; then
+    pid=$(cat "$pid_file")
+    kill -9 "$pid" 2>/dev/null
+  fi
+  
+  # Start the service
+  case $service in
+    "metagraph-l0") start_metagraph_l0_service ;;
+    "currency-l1")  start_currency_l1_service ;;
+    "data-l1")      start_data_l1_service ;;
+  esac
+  
+  echo "Service $service restarted"
+}
+
 # Conditionally start services
 [[ "$LAYERS_TO_RUN_CSV" == *"ml0"* ]] && start_metagraph_l0_service
 [[ "$LAYERS_TO_RUN_CSV" == *"cl1"* ]] && start_currency_l1_service
@@ -32,34 +53,38 @@ while true; do
     if [ -f "$pid_file" ]; then
       pid=$(cat "$pid_file")
 
+      # Check if process is running and healthy
+      restart_needed=false
+      restart_reason=""
+      
       if ! kill -0 "$pid" 2>/dev/null; then
-        echo "Process for $service (PID $pid) died, restarting..."
+        restart_needed=true
+        restart_reason="Process for $service (PID $pid) died"
+      else
+        # Determine port and perform health check
         case $service in
-          "metagraph-l0") start_metagraph_l0_service ;;
-          "currency-l1")  start_currency_l1_service ;;
-          "data-l1")      start_data_l1_service ;;
+          "metagraph-l0") port=$METAGRAPH_L0_PUBLIC_PORT ;;
+          "currency-l1")  port=$CURRENCY_L1_PUBLIC_PORT ;;
+          "data-l1")      port=$DATA_L1_PUBLIC_PORT ;;
         esac
-        continue
+
+        if ! health_check "$service" "$port"; then
+          restart_needed=true
+          restart_reason="Health check failed for $service"
+        fi
       fi
-
-      case $service in
-        "metagraph-l0") port=$METAGRAPH_L0_PUBLIC_PORT ;;
-        "currency-l1")  port=$CURRENCY_L1_PUBLIC_PORT ;;
-        "data-l1")      port=$DATA_L1_PUBLIC_PORT ;;
-      esac
-
-      if ! health_check "$service" "$port"; then
-        echo "Health check failed for $service, restarting..."
-        kill -9 "$pid" 2>/dev/null
-        case $service in
-          "metagraph-l0") start_metagraph_l0_service ;;
-          "currency-l1")  start_currency_l1_service ;;
-          "data-l1")      start_data_l1_service ;;
-        esac
+      
+      # Restart if needed
+      if [ "$restart_needed" = true ]; then
+        echo "$restart_reason, restarting..."
+        restart_service "$service"
       fi
     else
-      echo "PID file for $service not found"
+      echo "PID file for $service not found, starting service..."
+      restart_service "$service"
     fi
   done
-  sleep 30
+  
+  # Wait 5 minutes before next check
+  sleep 300
 done
