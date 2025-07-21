@@ -46,10 +46,11 @@ health_check() {
       # Handle Observing state with 5-minute timeout
       if [ "$state" = "Observing" ]; then
         current_time=$(date +%s)
-        
-        # Check if we have a stored timestamp for this service (using environment variable)
-        timestamp_var="${service_name}_observing_start"
-        
+
+        # Check if we have a stored timestamp for this service (using environment variable)        
+        sanitized_service_name=$(echo "$service_name" | tr '-' '_')
+        timestamp_var="${sanitized_service_name}_observing_start"
+                
         # Get timestamp from environment or set to current time
         if [ -n "${!timestamp_var}" ]; then
           # Use existing timestamp
