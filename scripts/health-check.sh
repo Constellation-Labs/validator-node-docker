@@ -1,6 +1,43 @@
 #!/bin/bash
 
-# Health check function with retries - Container-friendly version
+# Early version check before any retries
+version_check() {
+  local service_name=$1
+  local port=$2
+
+  node_info=$(curl -s http://localhost:$port/metagraph/info)
+  response_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$port/metagraph/info)
+
+  if [ "$response_code" != "200" ]; then
+    echo "$service_name: Unable to perform version check (HTTP $response_code)"
+    exit 1
+  fi
+
+  local_metagraph_version=$(echo "$node_info" | jq -r '.metagraphVersion' 2>/dev/null)
+  source_metagraph_version=$(curl -s http://$SOURCE_NODE_1_IP:$SOURCE_NODE_1_ML0_PUBLIC_PORT/metagraph/info | jq -r '.metagraphVersion' 2>/dev/null)
+
+  if [ -z "$local_metagraph_version" ] || [ "$local_metagraph_version" = "null" ] || \
+     [ -z "$source_metagraph_version" ] || [ "$source_metagraph_version" = "null" ]; then
+    echo "$service_name version check failed - unable to retrieve metagraph versions"
+    echo "Container startup failed - exiting..."
+    exit 1
+  fi
+
+  if [ "$local_metagraph_version" != "$source_metagraph_version" ]; then
+    echo "$service_name version mismatch:"
+    echo "  Local version : $local_metagraph_version"
+    echo "  Source version: $source_metagraph_version"
+    echo "Please update your node running: docker-compose down && docker-compose pull && docker-compose up -d"
+    echo "Container startup failed - leaving cluster and exiting..."
+    curl -s -X POST http://localhost:$cli_port/cluster/leave
+    
+    exit 1
+  fi
+
+  echo "$service_name version check passed. Version: $local_metagraph_version"
+}
+
+
 health_check() {
   local service_name=$1
   local port=$2
@@ -8,32 +45,10 @@ health_check() {
   local wait=2
 
   for i in $(seq 1 $attempts); do
-    # Get node info in one call and store in variable
     node_info=$(curl -s http://localhost:$port/metagraph/info)
     response_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$port/metagraph/info)
-    
-    if [ "$response_code" = "200" ]; then
-      # First validation: Check version compatibility
-      local_metagraph_version=$(echo "$node_info" | jq -r '.metagraphVersion' 2>/dev/null)
-      source_metagraph_version=$(curl -s http://$SOURCE_NODE_1_IP:$SOURCE_NODE_1_ML0_PUBLIC_PORT/metagraph/info | jq -r '.metagraphVersion' 2>/dev/null)
-      
-      if [ -z "$local_metagraph_version" ] || [ "$local_metagraph_version" = "null" ] || [ -z "$source_metagraph_version" ] || [ "$source_metagraph_version" = "null" ]; then
-        echo "$service_name version check failed - unable to retrieve metagraph versions"
-        echo "Container startup failed - exiting..."
-        exit 1
-      fi
-      
-      if [ "$local_metagraph_version" != "$source_metagraph_version" ]; then
-        echo "$service_name version mismatch:"
-        echo "  Local version : $local_metagraph_version"
-        echo "  Source version: $source_metagraph_version"
-        echo "Please update your node running: docker-compose down && docker-compose pull && docker-compose up -d"
-        echo "Container startup failed - exiting..."
-        exit 1
-      fi
-      
-      echo "$service_name version check passed. Version: $local_metagraph_version"
-      
+
+    if [ "$response_code" = "200" ]; then    
       state=$(echo "$node_info" | jq -r '.state' 2>/dev/null)
       
       # Check for immediately unhealthy states

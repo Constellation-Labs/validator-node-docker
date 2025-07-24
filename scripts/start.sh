@@ -38,7 +38,12 @@ restart_service() {
 [[ "$LAYERS_TO_RUN_CSV" == *"dl1"* ]] && start_data_l1_service
 
 echo "Waiting for services to start..."
-sleep 10
+sleep 30
+
+# Conditionally check versions
+[[ "$LAYERS_TO_RUN_CSV" == *"ml0"* ]] && version_check "metagraph-l0" "$METAGRAPH_L0_PUBLIC_PORT"
+[[ "$LAYERS_TO_RUN_CSV" == *"cl1"* ]] && version_check "currency-l1" "$CURRENCY_L1_PUBLIC_PORT"
+[[ "$LAYERS_TO_RUN_CSV" == *"dl1"* ]] && version_check "data-l1" "$DATA_L1_PUBLIC_PORT"
 
 while true; do
   for service in metagraph-l0 currency-l1 data-l1; do
