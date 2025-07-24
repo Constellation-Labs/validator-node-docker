@@ -7,13 +7,15 @@ get_random_source_node() {
 
   local peer_id_var="SOURCE_NODE_$((index + 1))_PEER_ID"
   local ip_var="SOURCE_NODE_$((index + 1))_IP"
-  local port_var="SOURCE_NODE_$((index + 1))_${layer}_P2P_PORT"
+  local p2p_port_var="SOURCE_NODE_$((index + 1))_${layer}_P2P_PORT"
+  local public_port_var="SOURCE_NODE_$((index + 1))_${layer}_PUBLIC_PORT"
 
   local peer_id="${!peer_id_var}"
   local ip="${!ip_var}"
-  local p2p_port="${!port_var}"
+  local p2p_port="${!p2p_port_var}"
+  local public_port_var="${!public_port_var}"
 
-  echo "$peer_id;$ip;$p2p_port"
+  echo "$peer_id;$ip;$p2p_port;$public_port_var"
 }
 
 check_if_node_is_ready_to_join() {

@@ -84,7 +84,12 @@ health_check() {
       echo "$service_name on port $port is healthy. State: $state"
 
       if [ "$service_name" = "metagraph-l0" ] && [ "$state" = "Ready" ]; then
-        current_ordinal=$(curl -s http://localhost:$port/snapshots/latest | jq -r '.value.ordinal')
+        source_info=$(get_random_source_node "ML0")
+        peer_id=$(echo "$source_info" | cut -d';' -f1)
+        ip=$(echo "$source_info" | cut -d';' -f2)
+        public_port=$(echo "$source_info" | cut -d';' -f4)
+
+        current_ordinal=$(curl -s http://$ip:$public_port/snapshots/latest | jq -r '.value.ordinal')
         ordinal_to_check_hashes=$((current_ordinal - 1))
 
         if [ -z "$ordinal_to_check_hashes" ] || [ "$ordinal_to_check_hashes" = "null" ]; then
@@ -96,11 +101,11 @@ health_check() {
         echo "Ordinal to check hashes: $ordinal_to_check_hashes"
 
         node_ordinal_hash=$(curl -s http://localhost:$port/snapshots/$ordinal_to_check_hashes/hash)
-        source_node_ordinal_hash=$(curl -s http://$SOURCE_NODE_1_IP:$SOURCE_NODE_1_ML0_PUBLIC_PORT/snapshots/$ordinal_to_check_hashes/hash)
+        source_node_ordinal_hash=$(curl -s http://$ip:$public_port/snapshots/$ordinal_to_check_hashes/hash)
 
         echo "Comparing snapshot hashes for ordinal $ordinal_to_check_hashes:"
         echo "  Local : $node_ordinal_hash"
-        echo "  Source: $source_node_ordinal_hash"
+        echo "  Source($ip): $source_node_ordinal_hash"
 
         if [ "$node_ordinal_hash" != "$source_node_ordinal_hash" ]; then
           echo "Hash mismatch detected. Container startup failed - exiting..."
